@@ -396,8 +396,9 @@ let ls_cmd =
     `S "DESCRIPTION";
     `P "List the contents of a directory on the fileserver."
   ] @ help in
-  Term.(ret(pure ls $ debug $ address $ path $ username)),
-  Term.info "ls" ~doc ~man
+  Cmd.v
+    (Cmd.info "ls" ~doc ~man)
+    Term.(ret (const ls $ debug $ address $ path $ username))
 
 let read_cmd =
   let doc = "Read a file" in
@@ -405,8 +406,9 @@ let read_cmd =
     `S "DESCRIPTION";
     `P "Write the contents of a file to stdout.";
   ] @ help in
-  Term.(ret(pure read $ debug $ address $ path $ username)),
-  Term.info "read" ~doc ~man
+  Cmd.v
+    (Cmd.info "read" ~doc ~man)
+    Term.(ret (const read $ debug $ address $ path $ username))
 
 let remove_cmd =
   let doc = "Remove a file or directory" in
@@ -414,8 +416,9 @@ let remove_cmd =
     `S "DESCRIPTION";
     `P "Remove a file or directory.";
   ] @ help in
-  Term.(ret(pure remove $ debug $ address $ path $ username)),
-  Term.info "remove" ~doc ~man
+  Cmd.v
+    (Cmd.info "remove" ~doc ~man)
+    Term.(ret (const remove $ debug $ address $ path $ username))
 
 let serve_cmd =
   let doc = "Serve a directory over 9P" in
@@ -423,8 +426,9 @@ let serve_cmd =
     `S "DESCRIPTION";
     `P "Listen for 9P connections and serve the named filesystem.";
   ] @ help in
-  Term.(ret(pure serve $ debug $ address $ path)),
-  Term.info "serve" ~doc ~man
+  Cmd.v
+    (Cmd.info "serve" ~doc ~man)
+    Term.(ret (const serve $ debug $ address $ path))
 
 let shell_cmd =
   let doc = "Run an interactive 9P session" in
@@ -432,20 +436,19 @@ let shell_cmd =
     `S "DESCRIPTION";
     `P "Connect to a 9P server and present a shell-like interface."
   ] @ help in
-  Term.(ret(pure shell $ debug $ address $ username)),
-  Term.info "shell" ~doc ~man
+  Cmd.v
+    (Cmd.info "shell" ~doc ~man)
+    Term.(ret (const shell $ debug $ address $ username))
 
-let default_cmd =
+let default_term, info =
   let doc = "interact with a remote machine over 9P" in
   let man = help in
-  Term.(ret (pure (`Help (`Pager, None)))),
-  Term.info (Sys.argv.(0)) ~version ~doc ~man
+  Term.(ret (const (`Help (`Pager, None)))),
+  (Cmd.info (Sys.argv.(0)) ~version ~doc ~man)
 
 let all_cmds = [
   ls_cmd; read_cmd; remove_cmd; serve_cmd; shell_cmd;
 ]
 
 let _ =
-  match Term.eval_choice default_cmd all_cmds with
-  | `Error _ -> exit 1
-  | _ -> exit 0
+  exit @@ Cmd.eval @@ Cmd.group ~default:default_term info all_cmds
